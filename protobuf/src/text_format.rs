@@ -5,6 +5,10 @@ use core::Message;
 use reflect::ReflectFieldRef;
 use reflect::ProtobufValueRef;
 
+/// AsciiExt trait is deprecated since Rust 1.23. When support for Rust older
+/// than 1.23 is not needed, these lines can be removed.
+#[allow(unused_imports, deprecated)]
+use std::ascii::AsciiExt;
 
 fn quote_bytes_to(bytes: &[u8], buf: &mut String) {
     for &c in bytes {
@@ -84,7 +88,8 @@ pub fn unescape_string(string: &str) -> Vec<u8> {
                 let d2 = parse_hex_digit(chars);
                 d1 * 16 + d2
             }
-            c => c as u8, // TODO: validate ASCII
+            c if c.is_ascii() => c as u8,
+            _ => panic!("incorrect escape rem"),
         }
     }
 
