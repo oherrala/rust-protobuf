@@ -18,7 +18,7 @@ impl UnknownValue {
         self.get_ref().wire_type()
     }
 
-    pub fn get_ref<'s>(&'s self) -> UnknownValueRef<'s> {
+    pub fn get_ref(&self) -> UnknownValueRef {
         match *self {
             UnknownValue::Fixed32(fixed32) => UnknownValueRef::Fixed32(fixed32),
             UnknownValue::Fixed64(fixed64) => UnknownValueRef::Fixed64(fixed64),
@@ -66,7 +66,7 @@ impl UnknownValues {
         };
     }
 
-    pub fn iter<'s>(&'s self) -> UnknownValuesIter<'s> {
+    pub fn iter(&self) -> UnknownValuesIter {
         UnknownValuesIter {
             fixed32: self.fixed32.iter(),
             fixed64: self.fixed64.iter(),
@@ -134,7 +134,7 @@ impl UnknownFields {
         }
     }
 
-    fn find_field<'a>(&'a mut self, number: &'a u32) -> &'a mut UnknownValues {
+    fn find_field(&mut self, number: &u32) -> &mut UnknownValues {
         self.init_map();
 
         match self.fields.as_mut().unwrap().entry(*number) {
@@ -165,7 +165,7 @@ impl UnknownFields {
         self.find_field(&number).add_value(value);
     }
 
-    pub fn iter<'s>(&'s self) -> UnknownFieldsIter<'s> {
+    pub fn iter(&self) -> UnknownFieldsIter {
         UnknownFieldsIter { entries: self.fields.as_ref().map(|m| m.iter()) }
     }
 

@@ -71,7 +71,7 @@ impl<'a> Drop for BufReadIter<'a> {
 }
 
 impl<'ignore> BufReadIter<'ignore> {
-    pub fn from_read<'a>(read: &'a mut Read) -> BufReadIter<'a> {
+    pub fn from_read(read: &mut Read) -> BufReadIter {
         BufReadIter {
             input_source: InputSource::Read(
                 BufReader::with_capacity(INPUT_STREAM_BUFFER_SIZE, read),
@@ -84,7 +84,7 @@ impl<'ignore> BufReadIter<'ignore> {
         }
     }
 
-    pub fn from_buf_read<'a>(buf_read: &'a mut BufRead) -> BufReadIter<'a> {
+    pub fn from_buf_read(buf_read: &mut BufRead) -> BufReadIter {
         BufReadIter {
             input_source: InputSource::BufRead(buf_read),
             buf: &[],
@@ -95,7 +95,7 @@ impl<'ignore> BufReadIter<'ignore> {
         }
     }
 
-    pub fn from_byte_slice<'a>(bytes: &'a [u8]) -> BufReadIter<'a> {
+    pub fn from_byte_slice(bytes: &[u8]) -> BufReadIter {
         BufReadIter {
             input_source: InputSource::Slice(bytes),
             buf: bytes,
@@ -107,7 +107,7 @@ impl<'ignore> BufReadIter<'ignore> {
     }
 
     #[cfg(feature = "bytes")]
-    pub fn from_bytes<'a>(bytes: &'a Bytes) -> BufReadIter<'a> {
+    pub fn from_bytes(bytes: &Bytes) -> BufReadIter {
         BufReadIter {
             input_source: InputSource::Bytes(bytes),
             buf: &bytes,
@@ -249,7 +249,7 @@ impl<'ignore> BufReadIter<'ignore> {
         let rem = &self.buf[self.pos_within_buf..self.limit_within_buf];
 
         let len = cmp::min(rem.len(), buf.len());
-        &mut buf[..len].copy_from_slice(&rem[..len]);
+        buf[..len].copy_from_slice(&rem[..len]);
         self.pos_within_buf += len;
         Ok(len)
     }
@@ -313,11 +313,11 @@ impl<'ignore> BufReadIter<'ignore> {
         match self.input_source {
             InputSource::Read(ref mut buf_read) => {
                 buf_read.consume(consume);
-                self.buf = unsafe { mem::transmute(buf_read.fill_buf()?) };
+                self.buf = unsafe { &*(buf_read.fill_buf()? as *const [u8]) };
             }
             InputSource::BufRead(ref mut buf_read) => {
                 buf_read.consume(consume);
-                self.buf = unsafe { mem::transmute(buf_read.fill_buf()?) };
+                self.buf = unsafe { &*(buf_read.fill_buf()? as *const [u8]) };
             }
             _ => {
                 return Ok(());

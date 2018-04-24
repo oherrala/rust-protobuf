@@ -139,9 +139,9 @@ pub trait Message: fmt::Debug + Clear + Any + Send + Sync {
     }
 
     /// Get a reference to unknown fields.
-    fn get_unknown_fields<'s>(&'s self) -> &'s UnknownFields;
+    fn get_unknown_fields(&self) -> &UnknownFields;
     /// Get a mutable reference to unknown fields.
-    fn mut_unknown_fields<'s>(&'s mut self) -> &'s mut UnknownFields;
+    fn mut_unknown_fields(&mut self) -> &mut UnknownFields;
 
     /// Get type id for downcasting.
     fn type_id(&self) -> TypeId {
@@ -185,7 +185,7 @@ pub trait Message: fmt::Debug + Clear + Any + Send + Sync {
         where Self : Sized;
 }
 
-pub fn message_down_cast<'a, M : Message + 'a>(m: &'a Message) -> &'a M {
+pub fn message_down_cast<M: Message>(m: &Message) -> &M {
     m.as_any().downcast_ref::<M>().unwrap()
 }
 

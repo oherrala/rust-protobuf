@@ -38,12 +38,11 @@ pub fn proto_path_to_rust_mod(path: &str) -> String {
         })
         .collect::<String>();
 
-    let name = if rust::is_rust_keyword(&name) {
+    if rust::is_rust_keyword(&name) {
         format!("{}_pb", name)
     } else {
         name
-    };
-    name
+    }
 }
 
 
@@ -77,7 +76,7 @@ impl<'a> RootScope<'a> {
 
     // find message or enum by fully qualified name
     pub fn find_message_or_enum(&'a self, fqn: &str) -> MessageOrEnumWithScope<'a> {
-        assert!(fqn.starts_with("."), "name must start with dot: {}", fqn);
+        assert!(fqn.starts_with('.'), "name must start with dot: {}", fqn);
         let fqn1 = &fqn[1..];
         self.packages()
             .into_iter()
@@ -136,11 +135,10 @@ impl<'a> FileScope<'a> {
     }
 
     fn find_message_or_enum(&self, name: &str) -> Option<MessageOrEnumWithScope<'a>> {
-        assert!(!name.starts_with("."));
+        assert!(!name.starts_with('.'));
         self.find_messages_and_enums()
             .into_iter()
-            .filter(|e| e.name_to_package() == name)
-            .next()
+            .find(|e| e.name_to_package() == name)
     }
 
     // find all enums in given file descriptor
@@ -235,11 +233,11 @@ impl<'a> Scope<'a> {
     pub fn get_messages_and_enums(&self) -> Vec<MessageOrEnumWithScope<'a>> {
         self.get_messages()
             .into_iter()
-            .map(|m| MessageOrEnumWithScope::Message(m))
+            .map(MessageOrEnumWithScope::Message)
             .chain(
                 self.get_enums()
                     .into_iter()
-                    .map(|m| MessageOrEnumWithScope::Enum(m)),
+                    .map(MessageOrEnumWithScope::Enum),
             )
             .collect()
     }
@@ -470,23 +468,23 @@ pub enum MessageOrEnumWithScope<'a> {
 
 impl<'a> WithScope<'a> for MessageOrEnumWithScope<'a> {
     fn get_scope(&self) -> &Scope<'a> {
-        match self {
-            &MessageOrEnumWithScope::Message(ref m) => m.get_scope(),
-            &MessageOrEnumWithScope::Enum(ref e) => e.get_scope(),
+        match *self {
+            MessageOrEnumWithScope::Message(ref m) => m.get_scope(),
+            MessageOrEnumWithScope::Enum(ref e) => e.get_scope(),
         }
     }
 
     fn escape_prefix(&self) -> &'static str {
-        match self {
-            &MessageOrEnumWithScope::Message(ref m) => m.escape_prefix(),
-            &MessageOrEnumWithScope::Enum(ref e) => e.escape_prefix(),
+        match *self {
+            MessageOrEnumWithScope::Message(ref m) => m.escape_prefix(),
+            MessageOrEnumWithScope::Enum(ref e) => e.escape_prefix(),
         }
     }
 
     fn get_name(&self) -> &'a str {
-        match self {
-            &MessageOrEnumWithScope::Message(ref m) => m.get_name(),
-            &MessageOrEnumWithScope::Enum(ref e) => e.get_name(),
+        match *self {
+            MessageOrEnumWithScope::Message(ref m) => m.get_name(),
+            MessageOrEnumWithScope::Enum(ref e) => e.get_name(),
         }
     }
 }

@@ -14,12 +14,12 @@ fn quote_bytes_to(bytes: &[u8], buf: &mut String) {
             b'\t' => buf.push_str(r"\t"),
             b'"' => buf.push_str("\\\""),
             b'\\' => buf.push_str(r"\\"),
-            b'\x20'...b'\x7e' => buf.push(c as char),
+            b'\x20'...b'\x7e' => buf.push(char::from(c)),
             _ => {
                 buf.push('\\');
-                buf.push((b'0' + (c >> 6)) as char);
-                buf.push((b'0' + ((c >> 3) & 7)) as char);
-                buf.push((b'0' + (c & 7)) as char);
+                buf.push(char::from(b'0' + (c >> 6)));
+                buf.push(char::from(b'0' + ((c >> 3) & 7)));
+                buf.push(char::from(b'0' + (c & 7)));
             }
         }
     }
@@ -64,28 +64,28 @@ pub fn unescape_string(string: &str) -> Vec<u8> {
     fn parse_escape_rem(chars: &mut std::str::Chars) -> u8 {
         let n = chars.next().unwrap();
         match n {
-            'a' => return b'\x07',
-            'b' => return b'\x08',
-            'f' => return b'\x0c',
-            'n' => return b'\n',
-            'r' => return b'\r',
-            't' => return b'\t',
-            'v' => return b'\x0b',
-            '"' => return b'"',
-            '\'' => return b'\'',
+            'a' => b'\x07',
+            'b' => b'\x08',
+            'f' => b'\x0c',
+            'n' => b'\n',
+            'r' => b'\r',
+            't' => b'\t',
+            'v' => b'\x0b',
+            '"' => b'"',
+            '\'' => b'\'',
             '0'...'9' => {
                 let d1 = n as u8 - b'0';
                 let d2 = parse_if_digit(chars);
                 let d3 = parse_if_digit(chars);
-                return (d1 * 64 + d2 * 8 + d3) as u8;
+                (d1 * 64 + d2 * 8 + d3) as u8
             },
             'x' => {
                 let d1 = parse_hex_digit(chars);
                 let d2 = parse_hex_digit(chars);
-                return d1 * 16 + d2;
+                d1 * 16 + d2
             }
-            c => return c as u8, // TODO: validate ASCII
-        };
+            c => c as u8, // TODO: validate ASCII
+        }
     }
 
     let mut chars = string.chars();

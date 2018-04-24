@@ -24,10 +24,7 @@ impl<T> SingularField<T> {
     /// Construct this object from given value.
     #[inline]
     pub fn some(value: T) -> SingularField<T> {
-        SingularField {
-            value: value,
-            set: true,
-        }
+        SingularField { value, set: true }
     }
 
     /// True iff this object contains data.
@@ -50,13 +47,13 @@ impl<T> SingularField<T> {
 
     /// View data as `Option`.
     #[inline]
-    pub fn as_ref<'a>(&'a self) -> Option<&'a T> {
+    pub fn as_ref(&self) -> Option<&T> {
         if self.set { Some(&self.value) } else { None }
     }
 
     /// View data as mutable `Option`.
     #[inline]
-    pub fn as_mut<'a>(&'a mut self) -> Option<&'a mut T> {
+    pub fn as_mut(&mut self) -> Option<&mut T> {
         if self.set {
             Some(&mut self.value)
         } else {
@@ -66,13 +63,13 @@ impl<T> SingularField<T> {
 
     /// Unwrap data as reference.
     #[inline]
-    pub fn unwrap_ref<'a>(&'a self) -> &'a T {
+    pub fn unwrap_ref(&self) -> &T {
         self.as_ref().unwrap()
     }
 
     /// Unwrap data as mutable reference.
     #[inline]
-    pub fn unwrap_mut_ref<'a>(&'a mut self) -> &'a mut T {
+    pub fn unwrap_mut_ref(&mut self) -> &mut T {
         self.as_mut().unwrap()
     }
 
@@ -112,13 +109,13 @@ impl<T> SingularField<T> {
 
     /// View as iterator over references.
     #[inline]
-    pub fn iter<'a>(&'a self) -> option::IntoIter<&'a T> {
+    pub fn iter(&self) -> option::IntoIter<&T> {
         self.as_ref().into_iter()
     }
 
     /// View as iterator over mutable references.
     #[inline]
-    pub fn mut_iter<'a>(&'a mut self) -> option::IntoIter<&'a mut T> {
+    pub fn mut_iter(&mut self) -> option::IntoIter<&mut T> {
         self.as_mut().into_iter()
     }
 
@@ -213,7 +210,7 @@ impl<T> SingularPtrField<T> {
 
     /// View data as reference option.
     #[inline]
-    pub fn as_ref<'a>(&'a self) -> Option<&'a T> {
+    pub fn as_ref(&self) -> Option<&T> {
         if self.set {
             Some(&**self.value.as_ref().unwrap())
         } else {
@@ -223,7 +220,7 @@ impl<T> SingularPtrField<T> {
 
     /// View data as mutable reference option.
     #[inline]
-    pub fn as_mut<'a>(&'a mut self) -> Option<&'a mut T> {
+    pub fn as_mut(&mut self) -> Option<&mut T> {
         if self.set {
             Some(&mut **self.value.as_mut().unwrap())
         } else {
@@ -234,14 +231,14 @@ impl<T> SingularPtrField<T> {
     /// Get data as reference.
     /// Panics if empty.
     #[inline]
-    pub fn get_ref<'a>(&'a self) -> &'a T {
+    pub fn get_ref(&self) -> &T {
         self.as_ref().unwrap()
     }
 
     /// Get data as mutable reference.
     /// Panics if empty.
     #[inline]
-    pub fn get_mut_ref<'a>(&'a mut self) -> &'a mut T {
+    pub fn get_mut_ref(&mut self) -> &mut T {
         self.as_mut().unwrap()
     }
 
@@ -283,13 +280,13 @@ impl<T> SingularPtrField<T> {
 
     /// View data as iterator.
     #[inline]
-    pub fn iter<'a>(&'a self) -> option::IntoIter<&'a T> {
+    pub fn iter(&self) -> option::IntoIter<&T> {
         self.as_ref().into_iter()
     }
 
     /// View data as mutable iterator.
     #[inline]
-    pub fn mut_iter<'a>(&'a mut self) -> option::IntoIter<&'a mut T> {
+    pub fn mut_iter(&mut self) -> option::IntoIter<&mut T> {
         self.as_mut().into_iter()
     }
 
@@ -323,7 +320,7 @@ impl<T : Default + Clear> SingularField<T> {
     /// This operation can be more efficient then construction of clear element,
     /// because it may reuse previously contained object.
     #[inline]
-    pub fn set_default<'a>(&'a mut self) -> &'a mut T {
+    pub fn set_default(&mut self) -> &mut T {
         self.set = true;
         self.value.clear();
         &mut self.value
@@ -348,7 +345,7 @@ impl<T : Default + Clear> SingularPtrField<T> {
     /// This operation can be more efficient then construction of clear element,
     /// because it may reuse previously contained object.
     #[inline]
-    pub fn set_default<'a>(&'a mut self) -> &'a mut T {
+    pub fn set_default(&mut self) -> &mut T {
         self.set = true;
         if self.value.is_some() {
             self.value.as_mut().unwrap().clear();

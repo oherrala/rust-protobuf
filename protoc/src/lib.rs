@@ -197,7 +197,7 @@ pub struct Version {
 
 impl Version {
     pub fn is_3(&self) -> bool {
-        self.version.starts_with("3")
+        self.version.starts_with('3')
     }
 }
 

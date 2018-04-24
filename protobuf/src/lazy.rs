@@ -24,7 +24,7 @@ impl<T> Lazy<T> {
         // do have to initialize self.ptr in the closure to guarantee
         // the ptr is valid for all calling threads at any point in
         // time)
-        let lock: &sync::Once = unsafe { mem::transmute(&self.lock) };
+        let lock: &sync::Once = unsafe { &*(&self.lock as *const sync::Once) };
         lock.call_once(|| unsafe {
             self.ptr = mem::transmute(Box::new(init()));
         });

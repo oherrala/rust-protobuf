@@ -115,12 +115,12 @@ enum SingularGetSet<M> {
 
 impl<M : Message + 'static> SingularGetSet<M> {
     fn get_ref<'a>(&self, m: &'a M) -> ProtobufValueRef<'a> {
-        match self {
-            &SingularGetSet::Copy(ref copy) => copy.get_field(m),
-            &SingularGetSet::String(get, _) => ProtobufValueRef::String(get(m)),
-            &SingularGetSet::Bytes(get, _) => ProtobufValueRef::Bytes(get(m)),
-            &SingularGetSet::Enum(ref get) => ProtobufValueRef::Enum(get.get_enum(m)),
-            &SingularGetSet::Message(ref get) => ProtobufValueRef::Message(get.get_message(m)),
+        match *self {
+            SingularGetSet::Copy(ref copy) => copy.get_field(m),
+            SingularGetSet::String(get, _) => ProtobufValueRef::String(get(m)),
+            SingularGetSet::Bytes(get, _) => ProtobufValueRef::Bytes(get(m)),
+            SingularGetSet::Enum(ref get) => ProtobufValueRef::Enum(get.get_enum(m)),
+            SingularGetSet::Message(ref get) => ProtobufValueRef::Message(get.get_message(m)),
         }
     }
 }
@@ -160,16 +160,16 @@ enum FieldAccessorFunctions<M> {
 
 impl<M> fmt::Debug for FieldAccessorFunctions<M> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &FieldAccessorFunctions::SingularHasGetSet { .. } =>
+        match *self {
+            FieldAccessorFunctions::SingularHasGetSet { .. } =>
                 write!(f, "SingularHasGetSet {{ .. }}"),
-            &FieldAccessorFunctions::Simple(..) =>
+            FieldAccessorFunctions::Simple(..) =>
                 write!(f, "Simple(..)"),
-            &FieldAccessorFunctions::Optional(..) =>
+            FieldAccessorFunctions::Optional(..) =>
                 write!(f, "Optional(..)"),
-            &FieldAccessorFunctions::Repeated(..) =>
+            FieldAccessorFunctions::Repeated(..) =>
                 write!(f, "Repeated(..)"),
-            &FieldAccessorFunctions::Map(..) =>
+            FieldAccessorFunctions::Map(..) =>
                 write!(f, "Map(..)"),
         }
     }
@@ -510,7 +510,7 @@ pub fn make_singular_enum_accessor<M : Message + 'static, E : ProtobufEnum + 'st
         name: name,
         fns: FieldAccessorFunctions::SingularHasGetSet {
             has: has,
-            get_set: SingularGetSet::Enum(Box::new(GetSingularEnumImpl { get: get })),
+            get_set: SingularGetSet::Enum(Box::new(GetSingularEnumImpl { get })),
         },
     })
 }
@@ -552,7 +552,7 @@ pub fn make_singular_message_accessor<M : Message + 'static, F : Message + 'stat
         name: name,
         fns: FieldAccessorFunctions::SingularHasGetSet {
             has: has,
-            get_set: SingularGetSet::Message(Box::new(GetSingularMessageImpl { get: get })),
+            get_set: SingularGetSet::Message(Box::new(GetSingularMessageImpl { get })),
         },
     })
 }

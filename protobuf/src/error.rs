@@ -32,7 +32,7 @@ pub enum ProtobufError {
 
 impl ProtobufError {
     pub fn message_not_initialized(message: &'static str) -> ProtobufError {
-        ProtobufError::MessageNotInitialized { message: message }
+        ProtobufError::MessageNotInitialized { message }
     }
 }
 
@@ -44,10 +44,10 @@ impl fmt::Display for ProtobufError {
 
 impl Error for ProtobufError {
     fn description(&self) -> &str {
-        match self {
+        match *self {
             // not sure that cause should be included in message
-            &ProtobufError::IoError(ref e) => e.description(),
-            &ProtobufError::WireError(ref e) => {
+            ProtobufError::IoError(ref e) => e.description(),
+            ProtobufError::WireError(ref e) => {
                 match *e {
                     WireError::Utf8Error => "invalid UTF-8 sequence",
                     WireError::UnexpectedWireType(..) => "unexpected wire type",
@@ -60,17 +60,17 @@ impl Error for ProtobufError {
                     WireError::Other => "other error",
                 }
             }
-            &ProtobufError::Utf8(ref e) => &e.description(),
-            &ProtobufError::MessageNotInitialized { .. } => "not all message fields set",
+            ProtobufError::Utf8(ref e) => &e.description(),
+            ProtobufError::MessageNotInitialized { .. } => "not all message fields set",
         }
     }
 
     fn cause(&self) -> Option<&Error> {
-        match self {
-            &ProtobufError::IoError(ref e) => Some(e),
-            &ProtobufError::Utf8(ref e) => Some(e),
-            &ProtobufError::WireError(..) => None,
-            &ProtobufError::MessageNotInitialized { .. } => None,
+        match *self {
+            ProtobufError::IoError(ref e) => Some(e),
+            ProtobufError::Utf8(ref e) => Some(e),
+            ProtobufError::WireError(..) => None,
+            ProtobufError::MessageNotInitialized { .. } => None,
         }
     }
 }

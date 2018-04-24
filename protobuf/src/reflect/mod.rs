@@ -177,7 +177,7 @@ impl MessageDescriptor {
         }
 
         let mut full_name = file.get_package().to_string();
-        if full_name.len() > 0 {
+        if !full_name.is_empty() {
             full_name.push('.');
         }
         full_name.push_str(proto.message.get_name());
@@ -189,7 +189,7 @@ impl MessageDescriptor {
             fields: fields
                 .into_iter()
                 .map(|f| {
-                    let proto = *field_proto_by_name.get(&f.name_generic()).unwrap();
+                    let proto = &field_proto_by_name[&f.name_generic()];
                     FieldDescriptor::new(f, proto)
                 })
                 .collect(),
@@ -210,18 +210,18 @@ impl MessageDescriptor {
         &self.full_name[..]
     }
 
-    pub fn fields<'a>(&'a self) -> &'a [FieldDescriptor] {
+    pub fn fields(&self) -> &[FieldDescriptor] {
         &self.fields
     }
 
-    pub fn field_by_name<'a>(&'a self, name: &str) -> &'a FieldDescriptor {
+    pub fn field_by_name(&self, name: &str) -> &FieldDescriptor {
         // TODO: clone is weird
-        let &index = self.index_by_name.get(&name.to_string()).unwrap();
+        let index = self.index_by_name[&name.to_string()];
         &self.fields[index]
     }
 
-    pub fn field_by_number<'a>(&'a self, number: u32) -> &'a FieldDescriptor {
-        let &index = self.index_by_number.get(&number).unwrap();
+    pub fn field_by_number(&self, number: u32) -> &FieldDescriptor {
+        let index = self.index_by_number[&number];
         &self.fields[index]
     }
 }
@@ -281,14 +281,14 @@ impl EnumDescriptor {
         }
     }
 
-    pub fn value_by_name<'a>(&'a self, name: &str) -> &'a EnumValueDescriptor {
+    pub fn value_by_name(&self, name: &str) -> &EnumValueDescriptor {
         // TODO: clone is weird
-        let &index = self.index_by_name.get(&name.to_string()).unwrap();
+        let index = self.index_by_name[&name.to_string()];
         &self.values[index]
     }
 
-    pub fn value_by_number<'a>(&'a self, number: i32) -> &'a EnumValueDescriptor {
-        let &index = self.index_by_number.get(&number).unwrap();
+    pub fn value_by_number(&self, number: i32) -> &EnumValueDescriptor {
+        let index = self.index_by_number[&number];
         &self.values[index]
     }
 }

@@ -41,7 +41,7 @@ pub mod wire_format {
     pub const TAG_TYPE_BITS: u32 = 3;
     pub const TAG_TYPE_MASK: u32 = (1u32 << TAG_TYPE_BITS as usize) - 1;
     // max possible tag number
-    pub const FIELD_NUMBER_MAX: u32 = 0x1fffffff;
+    pub const FIELD_NUMBER_MAX: u32 = 0x1fff_ffff;
 
     #[derive(PartialEq, Eq, Clone, Debug)]
     pub enum WireType {
@@ -100,10 +100,7 @@ pub mod wire_format {
 
         pub fn make(field_number: u32, wire_type: WireType) -> Tag {
             assert!(field_number > 0 && field_number <= FIELD_NUMBER_MAX);
-            Tag {
-                field_number: field_number,
-                wire_type: wire_type,
-            }
+            Tag { field_number, wire_type }
         }
 
         pub fn unpack(self) -> (u32, WireType) {
@@ -225,7 +222,7 @@ impl<'a> CodedInputStream<'a> {
             }
             let b = self.read_raw_byte()?;
             // TODO: may overflow if i == 9
-            r = r | (((b & 0x7f) as u64) << (i * 7));
+            r |= u64::from(b & 0x7f) << (i * 7);
             i += 1;
             if b < 0x80 {
                 return Ok(r);
@@ -309,7 +306,7 @@ impl<'a> CodedInputStream<'a> {
     pub fn read_raw_little_endian32(&mut self) -> ProtobufResult<u32> {
         let mut r = 0u32;
         let bytes: &mut [u8] = unsafe {
-            let p: *mut u8 = mem::transmute(&mut r);
+            let p: *mut u8 = &mut r as *mut u32 as *mut u8;
             slice::from_raw_parts_mut(p, mem::size_of::<u32>())
         };
         self.read(bytes)?;
@@ -319,7 +316,7 @@ impl<'a> CodedInputStream<'a> {
     pub fn read_raw_little_endian64(&mut self) -> ProtobufResult<u64> {
         let mut r = 0u64;
         let bytes: &mut [u8] = unsafe {
-            let p: *mut u8 = mem::transmute(&mut r);
+            let p: *mut u8 = &mut r as *mut u64 as *mut u8;
             slice::from_raw_parts_mut(p, mem::size_of::<u64>())
         };
         self.read(bytes)?;
@@ -343,12 +340,12 @@ impl<'a> CodedInputStream<'a> {
 
     pub fn read_double(&mut self) -> ProtobufResult<f64> {
         let bits = self.read_raw_little_endian64()?;
-        unsafe { Ok(mem::transmute::<u64, f64>(bits)) }
+        Ok(f64::from_bits(bits))
     }
 
     pub fn read_float(&mut self) -> ProtobufResult<f32> {
         let bits = self.read_raw_little_endian32()?;
-        unsafe { Ok(mem::transmute::<u32, f32>(bits)) }
+        Ok(f32::from_bits(bits))
     }
 
     pub fn read_int64(&mut self) -> ProtobufResult<i64> {
@@ -601,14 +598,13 @@ impl<'a> CodedInputStream<'a> {
     ) -> ProtobufResult<UnknownValue> {
         match wire_type {
             wire_format::WireTypeVarint => {
-                self.read_raw_varint64().map(|v| UnknownValue::Varint(v))
+                self.read_raw_varint64().map(UnknownValue::Varint)
             }
-            wire_format::WireTypeFixed64 => self.read_fixed64().map(|v| UnknownValue::Fixed64(v)),
-            wire_format::WireTypeFixed32 => self.read_fixed32().map(|v| UnknownValue::Fixed32(v)),
+            wire_format::WireTypeFixed64 => self.read_fixed64().map(UnknownValue::Fixed64),
+            wire_format::WireTypeFixed32 => self.read_fixed32().map(UnknownValue::Fixed32),
             wire_format::WireTypeLengthDelimited => {
                 let len = self.read_raw_varint32()?;
-                self.read_raw_bytes(len)
-                    .map(|v| UnknownValue::LengthDelimited(v))
+                self.read_raw_bytes(len).map(UnknownValue::LengthDelimited)
             }
             _ => Err(ProtobufError::WireError(
                 WireError::UnexpectedWireType(wire_type),
@@ -941,7 +937,7 @@ impl<'a> CodedOutputStream<'a> {
         assert!(self.position == 0);
 
         if self.position + bytes.len() < self.buffer.len() {
-            &mut self.buffer[self.position..self.position + bytes.len()].copy_from_slice(bytes);
+            self.buffer[self.position..self.position + bytes.len()].copy_from_slice(bytes);
             self.position += bytes.len();
             return Ok(());
         }

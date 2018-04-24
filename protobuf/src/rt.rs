@@ -33,31 +33,32 @@ use unknown::UnknownFields;
 
 /// Given `u64` value compute varint encoded length.
 pub fn compute_raw_varint64_size(value: u64) -> u32 {
-    if (value & (0xffffffffffffffffu64 << 7)) == 0 {
+    const MAX: u64 = 0xffff_ffff_ffff_ffff;
+    if (value & (MAX << 7)) == 0 {
         return 1;
     }
-    if (value & (0xffffffffffffffffu64 << 14)) == 0 {
+    if (value & (MAX << 14)) == 0 {
         return 2;
     }
-    if (value & (0xffffffffffffffffu64 << 21)) == 0 {
+    if (value & (MAX << 21)) == 0 {
         return 3;
     }
-    if (value & (0xffffffffffffffffu64 << 28)) == 0 {
+    if (value & (MAX << 28)) == 0 {
         return 4;
     }
-    if (value & (0xffffffffffffffffu64 << 35)) == 0 {
+    if (value & (MAX << 35)) == 0 {
         return 5;
     }
-    if (value & (0xffffffffffffffffu64 << 42)) == 0 {
+    if (value & (MAX << 42)) == 0 {
         return 6;
     }
-    if (value & (0xffffffffffffffffu64 << 49)) == 0 {
+    if (value & (MAX << 49)) == 0 {
         return 7;
     }
-    if (value & (0xffffffffffffffffu64 << 56)) == 0 {
+    if (value & (MAX << 56)) == 0 {
         return 8;
     }
-    if (value & (0xffffffffffffffffu64 << 63)) == 0 {
+    if (value & (MAX << 63)) == 0 {
         return 9;
     }
     10
@@ -65,7 +66,7 @@ pub fn compute_raw_varint64_size(value: u64) -> u32 {
 
 /// Given `u32` value compute varint encoded length.
 pub fn compute_raw_varint32_size(value: u32) -> u32 {
-    compute_raw_varint64_size(value as u64)
+    compute_raw_varint64_size(u64::from(value))
 }
 
 /// Helper trait implemented by integer types which could be encoded as varint.
@@ -88,7 +89,7 @@ impl ProtobufVarint for u64 {
 
 impl ProtobufVarint for u32 {
     fn len_varint(&self) -> u32 {
-        (*self as u64).len_varint()
+        u64::from(*self).len_varint()
     }
 }
 
@@ -108,7 +109,7 @@ impl ProtobufVarintZigzag for i64 {
 impl ProtobufVarint for i32 {
     fn len_varint(&self) -> u32 {
         // sign-extend and then compute
-        (*self as i64).len_varint()
+        i64::from(*self).len_varint()
     }
 }
 
@@ -134,21 +135,19 @@ impl<E:ProtobufEnum> ProtobufVarint for E {
 
 /// Size of serialized repeated packed field, excluding length and tag.
 pub fn vec_packed_varint_data_size<T : ProtobufVarint>(vec: &[T]) -> u32 {
-    vec.iter().map(|v| v.len_varint()).fold(0, |a, i| a + i)
+    vec.iter().map(|v| v.len_varint()).sum()
 }
 
 /// Size of serialized repeated packed field, excluding length and tag.
 pub fn vec_packed_varint_zigzag_data_size<T : ProtobufVarintZigzag>(vec: &[T]) -> u32 {
-    vec.iter()
-        .map(|v| v.len_varint_zigzag())
-        .fold(0, |a, i| a + i)
+    vec.iter().map(|v| v.len_varint_zigzag()).sum()
 }
 
 /// Size of serialized repeated packed enum field, excluding length and tag.
 pub fn vec_packed_enum_data_size<E : ProtobufEnum>(vec: &[E]) -> u32 {
     vec.iter()
         .map(|e| compute_raw_varint32_size(e.value() as u32))
-        .fold(0, |a, i| a + i)
+        .sum()
 }
 
 /// Size of serialized data with length prefix and tag
@@ -191,7 +190,7 @@ pub fn tag_size(field_number: u32) -> u32 {
         .len_varint()
 }
 
-fn value_size_no_tag<T : ProtobufVarint>(value: T, wt: WireType) -> u32 {
+fn value_size_no_tag<T : ProtobufVarint>(value: &T, wt: WireType) -> u32 {
     match wt {
         WireTypeFixed64 => 8,
         WireTypeFixed32 => 4,
@@ -202,7 +201,7 @@ fn value_size_no_tag<T : ProtobufVarint>(value: T, wt: WireType) -> u32 {
 
 /// Integer value size when encoded as specified wire type.
 pub fn value_size<T : ProtobufVarint>(field_number: u32, value: T, wt: WireType) -> u32 {
-    tag_size(field_number) + value_size_no_tag(value, wt)
+    tag_size(field_number) + value_size_no_tag(&value, wt)
 }
 
 /// Integer value size when encoded as specified wire type.
@@ -501,7 +500,7 @@ fn read_enum_with_unknown_fields_into<E : ProtobufEnum, C>(
     let i = is.read_int32()?;
     match ProtobufEnum::from_i32(i) {
         Some(e) => target(e),
-        None => unknown_fields.add_varint(field_number, i as i64 as u64),
+        None => unknown_fields.add_varint(field_number, i64::from(i) as u64),
     }
     Ok(())
 }
@@ -911,7 +910,7 @@ where
     let mut value = None;
 
     let len = is.read_raw_varint32()?;
-    let old_limit = is.push_limit(len as u64)?;
+    let old_limit = is.push_limit(u64::from(len))?;
     while !is.eof()? {
         let (field_number, wire_type) = is.read_tag_unpack()?;
         match field_number {

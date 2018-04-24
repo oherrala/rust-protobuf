@@ -82,7 +82,7 @@ impl ProtobufValue for bool {
 
 impl ProtobufValue for String {
     fn as_ref(&self) -> ProtobufValueRef {
-        ProtobufValueRef::String(*&self)
+        ProtobufValueRef::String(self)
     }
 }
 
@@ -94,7 +94,7 @@ impl ProtobufValue for str {
 
 impl ProtobufValue for Vec<u8> {
     fn as_ref(&self) -> ProtobufValueRef {
-        ProtobufValueRef::Bytes(*&self)
+        ProtobufValueRef::Bytes(self)
     }
 }
 

@@ -1,5 +1,4 @@
 use std::slice;
-use std::mem;
 
 /// Slice from `vec[vec.len()..vec.capacity()]`
 pub unsafe fn remaining_capacity_as_slice_mut<A>(vec: &mut Vec<A>) -> &mut [A] {
@@ -10,7 +9,7 @@ pub unsafe fn remaining_capacity_as_slice_mut<A>(vec: &mut Vec<A>) -> &mut [A] {
 }
 
 pub unsafe fn remove_lifetime_mut<A : ?Sized>(a: &mut A) -> &'static mut A {
-    mem::transmute(a)
+    &mut *(a as *mut A)
 }
 
 #[cfg(test)]

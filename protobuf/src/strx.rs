@@ -1,4 +1,4 @@
-pub fn remove_to<'s>(s: &'s str, c: char) -> &'s str {
+pub fn remove_to(s: &str, c: char) -> &str {
     match s.rfind(c) {
         Some(pos) => &s[(pos + 1)..],
         None => s,
