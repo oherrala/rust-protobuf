@@ -239,55 +239,54 @@ impl<'a> CodedInputStream<'a> {
             loop {
                 let rem = self.source.remaining_in_buf();
 
-                if rem.len() >= 1 {
-                    // most varints are in practice fit in 1 byte
-                    if rem[0] < 0x80 {
-                        ret = rem[0] as u64;
-                        consume = 1;
-                    } else {
-                        // handle case of two bytes too
-                        if rem.len() >= 2 && rem[1] < 0x80 {
-                            ret = (rem[0] & 0x7f) as u64 | (rem[1] as u64) << 7;
-                            consume = 2;
-                        } else if rem.len() >= 10 {
-                            // Read from array when buf at at least 10 bytes,
-                            // max len for varint.
-                            let mut r: u64 = 0;
-                            let mut i: usize = 0;
-                            {
-                                let rem = rem;
-                                loop {
-                                    if i == 10 {
-                                        return Err(
-                                            ProtobufError::WireError(WireError::IncorrectVarint),
-                                        );
-                                    }
-
-                                    let b = if true {
-                                        // skip range check
-                                        unsafe { *rem.get_unchecked(i) }
-                                    } else {
-                                        rem[i]
-                                    };
-
-                                    // TODO: may overflow if i == 9
-                                    r = r | (((b & 0x7f) as u64) << (i * 7));
-                                    i += 1;
-                                    if b < 0x80 {
-                                        break;
-                                    }
-                                }
-                            }
-                            consume = i;
-                            ret = r;
-                        } else {
-                            break 'slow;
-                        }
-                    }
-                } else {
+                if rem.is_empty() {
                     break 'slow;
                 }
-                break;
+
+                // most varints are in practice fit in 1 byte
+                if rem[0] < 0x80 {
+                    ret = u64::from(rem[0]);
+                    consume = 1;
+                    break;
+                }
+
+                // handle case of two bytes too
+                if rem.len() >= 2 && rem[1] < 0x80 {
+                    ret = u64::from(rem[0] & 0x7f) | u64::from(rem[1]) << 7;
+                    consume = 2;
+                    break;
+                }
+
+                if rem.len() >= 10 {
+                    // Read from array when buf at at least 10 bytes,
+                    // max len for varint.
+                    let mut r: u64 = 0;
+                    let mut i: usize = 0;
+
+                    loop {
+                        if i == 10 {
+                            return Err(
+                                ProtobufError::WireError(WireError::IncorrectVarint),
+                            );
+                        }
+
+                        // skip range check
+                        let b = unsafe { *rem.get_unchecked(i) };
+
+                        // TODO: may overflow if i == 9
+                        r = r | (u64::from(b & 0x7f) << (i * 7));
+                        i += 1;
+                        if b < 0x80 {
+                            break;
+                        }
+                    }
+
+                    consume = i;
+                    ret = r;
+                    break;
+                }
+
+                break 'slow;
             }
 
             self.source.consume(consume);
